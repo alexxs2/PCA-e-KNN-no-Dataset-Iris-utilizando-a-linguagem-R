@@ -1,0 +1,62 @@
+#install.packages("ggplot2", dependencies = TRUE)
+library(ggplot2)
+library(class)
+data(iris)
+head(iris)
+
+colunas_numericas_iris <- iris[, 1:4]
+
+head(colunas_numericas_iris)
+
+padronizado_iris <- scale(colunas_numericas_iris)
+head(padronizado_iris)
+
+pca_resultado <- prcomp(padronizado_iris, center = T, scale. = T )
+
+summary(pca_resultado)
+
+pca_data_frame <- data.frame(pca_resultado$x, Species = iris$Species)
+
+ggplot(pca_data_frame, aes(x = PC1, y = PC2,color = Species))+
+  geom_point(size = 2)+
+  labs(title = "PCA do Dataset Iris",
+       x = "Componente Principal 1",
+       y = "Componente Princinpal 2") +
+  theme_minimal()
+
+plot(pca_resultado,type = "l", main = "Gráfico Scree")
+abline(h = 1, col = "red",lty = 2)
+
+pca_resultado$rotation
+
+iris_pca_reduzido <- pca_data_frame[, 1:2]
+
+head(iris_pca_reduzido)
+
+#Utilizando o "pca_data_frame" para treinar um algoritmo de Knn
+set.seed(123)
+
+indices <- sample(1:nrow(iris_pca_reduzido), size = 0.7 * nrow(iris_pca_reduzido))
+
+treino <- iris_pca_reduzido[indices, ]
+teste <- iris_pca_reduzido[-indices, ]
+
+treino_rotulos <-iris$Species[indices]
+teste_rotulos <- iris$Species[-indices]
+
+
+resultados <- knn(treino, teste, treino_rotulos, 2)
+
+resultados
+
+matrix_confusao <- table(resultados, teste_rotulos)
+print(matrix_confusao)
+
+taxa_acerto = (matrix_confusao[1]+matrix_confusao[5]+matrix_confusao[9])/sum(matrix_confusao)
+taxa_acerto
+
+taxa_erro = (matrix_confusao[2]+matrix_confusao[3]+matrix_confusao[4]+matrix_confusao[6]+matrix_confusao[7]+matrix_confusao[8])/sum(matrix_confusao)
+taxa_erro
+
+print(paste("Acurácia de acerto:", round(taxa_acerto * 100, 2), "%"))
+
